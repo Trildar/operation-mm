@@ -15,7 +15,7 @@
 {% include "shared/header-nav.html" %}
 <main>
   <div id="msg-container" class="msg-container">
-    {% for msg in messages -%}
+    <!--{% for msg in messages -%}
     <div class="msg">
       {% if msg.video_id -%}
       <div class="video placeholder" data-video_id="{{msg.video_id}}">
@@ -29,7 +29,7 @@
       <p>{{msg.message}}</p>
       <div class="sender-name">{{msg.sender_name}}</div>
     </div>
-    {%- endfor %}
+    {%- endfor %}-->
   </div>
 </main>
 <dialog id="video-dialog">
@@ -46,4 +46,65 @@
     </div>
   </div>
 </dialog>
+
+<template id="message-template">
+  <div class="msg">
+    <p class="message-content"></p>
+    <div class="sender-name"></div>
+  </div>
+</template>
+
+<script>
+  let messageContainer;
+  let messageTemplate;
+
+  const messageBatchSize = 25;
+  let messageIndex = 0;
+
+  let fetching = false;
+  
+  document.addEventListener("DOMContentLoaded", async function() {
+    messageContainer = document.querySelector('.msg-container');
+    messageTemplate = document.querySelector('#message-template');
+
+    await fetchAndAppendMessages();
+  });
+  
+  window.onscroll = async function(ev) {
+    if (fetching) {
+      return;
+    }
+
+    if (((window.innerHeight * 1.35) + window.scrollY) >= document.body.scrollHeight) {
+      await fetchAndAppendMessages();
+    }
+  };
+
+  async function fetchAndAppendMessages() {
+    if (!messageTemplate || !messageTemplate) {
+      return;
+    }
+
+    fetching = true;
+
+    const response = await fetch(`./public/messages/messages-${messageIndex * messageBatchSize}-${++messageIndex * messageBatchSize}.json`);
+    const messages = await response.json();
+
+    const elements = messages.map(m => createMessageElement(m));
+    elements.forEach(e => messageContainer.append(e));
+
+    message_masonry.appended(elements);
+    message_masonry.layout();
+
+    fetching = false;
+  }
+
+  function createMessageElement(message) {
+    const messageElement = messageTemplate.content.cloneNode(true);
+    messageElement.querySelector('.message-content').textContent = message.messageText;
+    messageElement.querySelector('.sender-name').textContent = message.senderName;
+
+    return messageElement.querySelector('.msg');
+  }
+</script>
 {%- endblock content %}

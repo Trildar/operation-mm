@@ -95,7 +95,7 @@
       const elements = messages.map(m => createMessageElement(m));
       elements.forEach(e => messageContainer.append(e));
 
-      message_masonry.appended(elements);
+      message_masonry.addItems(elements);
       message_masonry.layout();
     }
     catch {

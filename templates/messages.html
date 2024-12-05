@@ -58,8 +58,9 @@
   let messageContainer;
   let messageTemplate;
 
-  const messageBatchSize = 25;
+  const messageBatchSize = 2000;
   let messageIndex = 0;
+  let endOfMessages = false;
 
   let fetching = false;
   
@@ -71,7 +72,7 @@
   });
   
   window.onscroll = async function(ev) {
-    if (fetching) {
+    if (endOfMessages || fetching) {
       return;
     }
 
@@ -81,22 +82,28 @@
   };
 
   async function fetchAndAppendMessages() {
-    if (!messageTemplate || !messageTemplate) {
+    if (endOfMessages || !messageTemplate || !messageContainer) {
       return;
     }
 
     fetching = true;
 
-    const response = await fetch(`./public/messages/messages-${messageIndex * messageBatchSize}-${++messageIndex * messageBatchSize}.json`);
-    const messages = await response.json();
+    try {
+      const response = await fetch(`./public/messages/messages-${messageIndex * messageBatchSize}-${++messageIndex * messageBatchSize}.json`);
+      const messages = await response.json();
 
-    const elements = messages.map(m => createMessageElement(m));
-    elements.forEach(e => messageContainer.append(e));
+      const elements = messages.map(m => createMessageElement(m));
+      elements.forEach(e => messageContainer.append(e));
 
-    message_masonry.appended(elements);
-    message_masonry.layout();
-
-    fetching = false;
+      message_masonry.appended(elements);
+      message_masonry.layout();
+    }
+    catch {
+      endOfMessages = true;
+    }
+    finally {
+      fetching = false;
+    }
   }
 
   function createMessageElement(message) {
